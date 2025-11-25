@@ -1,0 +1,11 @@
+[project]
+name = "mermaid-mcp-pydantic"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "logfire>=4.15.1",
+    "pydantic-ai-slim[google,mcp,openai]>=1.22.0",
+    "pydantic-settings>=2.12.0",
+]

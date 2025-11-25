@@ -1,0 +1,14 @@
+{
+    "provider_url": "http://localhost:11434/v1",
+    "model_name": "gemini-2.5-flash",
+    "servers": {
+        "mermaid-mcp": {
+            "url": "https://mcp.mermaidchart.com/sse",
+            "type": "sse"
+        },
+        "terraform-mcp": {
+            "url": "http://localhost:8080/mcp",
+            "type": "http"
+        }
+    }
+}
