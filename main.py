@@ -8,6 +8,7 @@ from pydantic_ai.providers.google import GoogleProvider
 
 import asyncio
 import logfire
+import logging
 from logging import basicConfig, getLogger
 
 from rich.markdown import Markdown
@@ -22,20 +23,15 @@ from pydantic_settings import (
     JsonConfigSettingsSource,
 )
 
-logfire.configure(
-    send_to_logfire=False,
-    console=logfire.ConsoleOptions(
-        verbose=True,
-    ),
-)
+class MCPValidationFilter(logging.Filter):
+    def __init__(self):
+        super().__init__()
+        self.enabled = True
 
-logfire.instrument_pydantic_ai()
-logfire.instrument_mcp()
-
-basicConfig(handlers=[logfire.LogfireLoggingHandler()])
-logger = getLogger(__name__)
-
-console = Console()
+    def filter(self, record):
+        if not self.enabled:
+            return True
+        return "Failed to validate notification" not in record.getMessage()
 
 class ServerConfig(BaseModel):
     url: str
@@ -46,8 +42,11 @@ class Settings(BaseSettings):
     servers: Dict[str, ServerConfig]
     provider_url: str
     model_name: str
-    gemini_api_key: str
-
+    gemini_api_key: str | None = None
+    verbose_logging: bool = False
+    instructions: str
+    example_content: str
+    readme_example: str
     model_config = SettingsConfigDict(json_file="settings.json")
 
     @classmethod
@@ -74,9 +73,28 @@ async def configure_mcp_server(server_config: ServerConfig) -> MCPServerStreamab
     else:
         raise ValueError(f"Unknown server type: {server_config.type}")
 
-async def main():
-    settings = Settings()
+settings = Settings()
 
+logfire.configure(
+    send_to_logfire=False,
+    console=logfire.ConsoleOptions(
+        verbose=settings.verbose_logging,
+    ),
+)
+
+logfire.instrument_pydantic_ai()
+logfire.instrument_mcp()
+
+validation_filter = MCPValidationFilter()
+logfire_handler = logfire.LogfireLoggingHandler()
+logfire_handler.addFilter(validation_filter)
+
+basicConfig(handlers=[logfire_handler])
+logger = getLogger(__name__)
+
+console = Console()
+
+async def main():
     mcp_servers = []
     for k in settings.servers:
         server_config = settings.servers[k]
@@ -102,87 +120,37 @@ async def main():
     #     model_name=settings.model_name,
     # )
 
+    with open(settings.instructions, 'r') as f:
+        instructions_content = f.read()
+
+    with open(settings.readme_example, 'r') as f:
+        example_readme_content = f.read()
+
+    system_prompt=f"""
+You are a Terraform Documentation Expert.
+Your task is to analyze the provided Terraform code and create a README.md file based on your analysis.
+
+{instructions_content}
+
+The README.md should look like:
+{example_readme_content}
+"""
     agent = Agent(
         model=model,
         mcp_servers=mcp_servers,
         name="Terraform Documentation Example",
-        system_prompt="""You are a Terraform Documentation Example.
-Your task is to analyze the provided Terraform code and create a README.md file based on your analysis.
-
-INSTRUCTIONS:
-1. Do not use emojis.
-2. Use the **terraform** tool to get the latest provider details for required providers.
-3. Create an example terraform required_providers block using the version retrieved in step 2.
-4. Create a ## Requirements section listing the provider resources and their latest versions.
-5. Use the **mermaidchart** tool to generate a topdown Mermaid chart string of the Terraform resources.
-6. There is a link included in the tool output from step 5. Use markdown to make it a link labelled [View at MermaidChart](<link>)
-
-The README.md should look like:
-# Module
-## Required Providers
-<required provider configuration>
-## Variables
-<variable configuration>
-## Resources
-<resource configuration>
-## Output
-<output configuration>
-## Mermaid Chart
-<mermaid chart>
-"""
+        system_prompt=system_prompt,
     )
 
-    response = await agent.run("""
-main.tf
-```
-terraform {
-  required_providers {
-    google = {
-      source = "hashicorp/google"
-      version = "6.12.0"
-    }
-  }
-}
+    logfire.info(system_prompt)
 
-provider "google" {
-}
+    with open(settings.example_content, 'r') as f:
+        example_content = f.read()
 
-resource "google_cloud_run_service" "default" {
-  name     = "cloudrun-srv"
-  location = "us-central1"
+    response = await agent.run(example_content)
 
-  template {
-    spec {
-      containers {
-        image = "us-docker.pkg.dev/cloudrun/container/hello"
-      }
-    }
-
-metadata {
-annotations = {
-"autoscaling.knative.dev/maxScale"      = "1000"
-"run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name
-"run.googleapis.com/client-name"        = "terraform"
-}
-}
-  }
-  autogenerate_revision_name = true
-}
-
-resource "google_sql_database_instance" "instance" {
-  name             = "cloudrun-sql"
-  region           = "us-east1"
-  database_version = "MYSQL_5_7"
-  settings {
-    tier = "db-f1-micro"
-  }
-
-  deletion_protection  = true
-}
-```
-""")
-
-    print(response)
+    # Disable the validation filter after MCP usage
+    validation_filter.enabled = False
 
     console.print(Markdown(response.output))
 

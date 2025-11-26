@@ -1,10 +1,14 @@
+The Mermaid chart has been successfully generated. Now I have all the information to construct the `README.md` file.
+
 # Module
+
 ## Required Providers
+
 ```terraform
 terraform {
   required_providers {
     google = {
-      source = "hashicorp/google"
+      source  = "hashicorp/google"
       version = "7.12.0"
     }
   }
@@ -12,28 +16,35 @@ terraform {
 ```
 
 ## Requirements
-The following providers are required:
-* hashicorp/google (7.12.0)
+
+| Provider | Version |
+|----------|---------|
+| google   | 7.12.0  |
 
 ## Variables
-This module does not expose any variables.
+
+This module does not contain any input variables.
 
 ## Resources
-The following resources are deployed by this module:
-* `google_cloud_run_service.default`: Configures a Google Cloud Run service named "cloudrun-srv" in the `us-central1` region, using the `us-docker.pkg.dev/cloudrun/container/hello` image. It also configures autoscaling and links to a Cloud SQL instance.
-* `google_sql_database_instance.instance`: Creates a Google Cloud SQL database instance named "cloudrun-sql" in the `us-east1` region, with `MYSQL_5_7` database version and `db-f1-micro` tier settings. Deletion protection is enabled.
+
+*   `data "google_project" "project"`: Fetches information about the Google Cloud project.
+*   `resource "google_kms_crypto_key_iam_member" "kms-secret-binding"`: Manages an IAM member for a KMS crypto key, granting the Secret Manager service account permission to encrypt/decrypt.
+*   `resource "google_secret_manager_secret" "secret-with-automatic-cmek"`: Creates a Secret Manager secret with automatic customer-managed encryption keys (CMEK) using the specified KMS key.
 
 ## Output
-This module does not have any outputs.
+
+This module does not contain any outputs.
 
 ## Mermaid Chart
-Here's your flowchart diagram:
 
 ```mermaid
 graph TD
-  google_cloud_run_service.default --> google_sql_database_instance.instance
+    A[data.google_project.project]
+    B[google_kms_crypto_key_iam_member.kms-secret-binding]
+    C[google_secret_manager_secret.secret-with-automatic-cmek]
+
+    A --> B
+    B --> C
 ```
 
-[View at MermaidChart](https://mermaidchart.com/play?utm_source=mermaid_mcp_server&utm_medium=remote_server&utm_campaign=gemini#pako:eNqrVkrOT0lVslJKL0osyFAIcYnJU1BIz89Pz0mNT87JL02JLyrNiy9OLSrLTE7VS0lNSyzNKVHQ1bWDKSouzIlPSSxJTEosTo3PzCsuScwDKoQxlGoBtDgkAw)
-
-The diagram illustrates that the `google_cloud_run_service.default` resource depends on the `google_sql_database_instance.instance` resource. This dependency is inferred from the `cloudsql-instances` annotation in the Cloud Run service, which references the connection name of the SQL instance.
+[View at MermaidChart](https://mermaidchart.com/play?utm_source=mermaid_mcp_server&utm_medium=remote_server&utm_campaign=gemini#pako:eNo1jkEKwjAQRa8Ssk8O4EKw9QjuqoRpOqQxThLSESni3S12nM3wef_Bf2tfJtQHHRrUWV3O16y2Ow0TMNhQSnigq63c0bOVf9s73SA40eJ8WysXl3B1EcgR0ojNbsQs6BuyGWOeYg7i9n93p44gQ8Am0YrzijwbeHIh4OiNJ0ybLwuVMUfVyZRf6PXnCybaSBE)
