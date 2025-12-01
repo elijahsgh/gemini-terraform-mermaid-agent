@@ -1,6 +1,6 @@
 {
     "provider_url": "http://localhost:11434/v1",
-    "model_name": "gemini-3-pro-preview",
+    "model_name": "gemini-2.5-flash",
     "verbose_logging": false,
     "instructions": "instructions.md",
     "example_content": "example.tf",

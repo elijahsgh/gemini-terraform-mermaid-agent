@@ -1,6 +1,6 @@
 {
-    "provider_url": "http://localhost:11434/v1",
-    "model_name": "gemini-3-pro-preview",
+    "provider_url": "http://0:11534/v1",
+    "model_name": "gemma-3n-e2b-it",
     "verbose_logging": false,
     "instructions": "instructions.md",
     "example_content": "example.tf",

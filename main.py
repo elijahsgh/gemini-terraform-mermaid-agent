@@ -94,6 +94,9 @@ logger = getLogger(__name__)
 
 console = Console()
 
+class MarkdownContent(BaseModel):
+    content: str
+
 async def main():
     mcp_servers = []
     for k in settings.servers:
@@ -127,22 +130,29 @@ async def main():
         example_readme_content = f.read()
 
     system_prompt=f"""
-You are a Terraform Documentation Expert.
-Your task is to analyze the provided Terraform code and create a README.md file based on your analysis.
+You are a Terraform Documentation Agent.
+Your goal is to accurately document the provided Terraform code.
 
+# CRITICAL RULES
+1. You MUST NOT guess or hallucinate versions.
+2. You MUST use the provided tools to fetch real data.
+3. DO NOT generate the final README.md until you have successfully called the tools.
+
+Follow each step. Do not skip steps.
 {instructions_content}
 
-The README.md should look like:
+# FINAL OUTPUT FORMAT
+Only after the last step is complete, output the README in this format:
+
 {example_readme_content}
 """
     agent = Agent(
         model=model,
+        output_type=MarkdownContent,
         mcp_servers=mcp_servers,
         name="Terraform Documentation Example",
         system_prompt=system_prompt,
     )
-
-    logfire.info(system_prompt)
 
     with open(settings.example_content, 'r') as f:
         example_content = f.read()
@@ -152,10 +162,10 @@ The README.md should look like:
     # Disable the validation filter after MCP usage
     validation_filter.enabled = False
 
-    console.print(Markdown(response.output))
+    console.print(response.output.content)
 
     with open('Generated_README.md', 'w') as f:
-        f.write(response.output)
+        f.write(response.output.content)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,21 +1,13 @@
 # Module
 
 ## Required Providers
-
-<required provider configuration>
+(Insert code block with semantic versions at least the same as the fetched versions)
 
 ## Variables
-
-<variable configuration>
+(List variables)
 
 ## Resources
-
-<resource configuration>
-
-## Output
-
-<output configuration>
+(List resources)
 
 ## Mermaid Chart
-
-<mermaid chart>
+(Insert the Mermaid syntax and the link to the diagram, do not describe the diagram)
