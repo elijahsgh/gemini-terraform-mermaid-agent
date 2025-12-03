@@ -159,9 +159,6 @@ Only after the last step is complete, output the README in this format:
 
     response = await agent.run(example_content)
 
-    from code import interact
-    interact(local=locals())
-
     # Disable the validation filter after MCP usage
     validation_filter.enabled = False
 
