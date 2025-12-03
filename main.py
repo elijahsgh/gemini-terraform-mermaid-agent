@@ -2,7 +2,7 @@ from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerSSE, MCPServerStreamableHTTP
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.models.google import GoogleModel
-
+from pydantic_ai.messages import BinaryContent
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.providers.google import GoogleProvider
 
@@ -159,10 +159,23 @@ Only after the last step is complete, output the README in this format:
 
     response = await agent.run(example_content)
 
+    from code import interact
+    interact(local=locals())
+
     # Disable the validation filter after MCP usage
     validation_filter.enabled = False
 
     console.print(response.output.content)
+
+    # Search output for mermaid image
+    for msg in response.all_messages():
+        if hasattr(msg, 'parts'):
+            for part in msg.parts:
+                if hasattr(part, 'content') and isinstance(part.content, list):
+                    for item in part.content:
+                        if isinstance(item, BinaryContent):
+                            with open('mermaid_chart.png', 'wb') as f:
+                                f.write(item.data)
 
     with open('Generated_README.md', 'w') as f:
         f.write(response.output.content)
